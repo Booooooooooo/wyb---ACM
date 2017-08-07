@@ -1,0 +1,111 @@
+单源最短路
+
+Bellman-Ford
+复杂度O（v*e）
+可用于检查是否存在负圈
+d[i] = min(d[j] + (从j到i的权值)|e=(j,i))
+
+struct edge{
+	int from,to,cost;
+};
+edge es[max_e];
+int d[max_v],v,e;
+
+void shortest_path(int s)
+{
+	for(int i = 0; i < v; i++)
+		d[i] = inf;
+	d[s] = 0;
+	while(true){
+		bool update = false;
+		for(int i = 0; i < e; i++){
+			edge e = es[i];
+			if(d[e.from] != inf && d[e.to] > d[e.from] + e.cost){
+				d[e.to] = d[e.from] + e.cost;
+				update = true;
+			}
+		}
+		if(!update) break;
+	}
+}
+
+
+
+//如果返回true则存在负圈
+bool find_negative_loop(){
+	memset(d,0,sizeof(d));
+	
+	for(int i = 0; i < v; i++){
+		for(int j = 0; j < e; j++){
+			edge e = es[j];
+			if(d[e.to] > d[e.from] + e.cost){
+				d[e.to] = d[e.from] + e.cost;
+				if(i == v - 1) return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+
+
+Dijkstra
+复杂度O（elogv）
+找到最短距离已经确定的顶点，从它出发更新相邻顶点的最短距离
+用到了STL知识 ，很卡时间的题目可能过不了因为STL会拖慢
+
+struct edge{
+	int to,cost;
+};
+typedef pair<int,int> P;
+int v;
+vector<edge> G[max_v];//存以i为起点的边
+int d[max_v];
+
+void dijkstra(int s)
+{
+	priority_queue<P, vector<P>, greater<P> > que;
+	fill(d, d + v, inf);
+	d[s] = 0;
+	que.push(P(0,s);
+	
+	while(!que.empty()){
+		P p = que.top();
+		que.pop();
+		int v = p.second;
+		if(d[v] < p.first) continue;
+		for(int i = 0; i < G[v].size(); i++){
+			edge e = G[v][i];
+			if(d[e.to] > d[v] + e.cost){
+				d[e.to] = d[v] + e.cost;
+				que.push(P(d[e.to],e.to));
+			}
+		}
+	}
+}
+
+
+
+
+
+任意两点间最短路
+
+Floyd
+复杂度O(v^3)
+i到k的最短路正好经过k一次和完全不经过k
+不断进行d[i][j] = min(d[i][j] ,d[i][k] + d[k][j])的更新
+可以处理负边
+
+int d[max_v][max_v],v;
+
+void floyd()
+{
+	for(int k = 0; k < v; k++){
+		for(int i = 0; i < v; i++){
+			for(int j = 0; j < v; j++){
+				d[i][j] = min(d[i][j] ,d[i][k] + d[k][j]);
+			}
+		}
+	}
+}//注意循环的层次
