@@ -1,0 +1,66 @@
+Prim
+贪心的选取T和其他顶点之间相连的最小权值的边，并把它加到T中
+复杂度O(v^2) 堆维护时优化为O(elogv)
+
+int cost[max_v][max_v],mincost[max_v];
+bool used[max_v];
+int n;
+
+int prim()
+{
+	for(int i = 0; i < n; i++){
+		mincost[i] = inf;
+		used[i] = false;
+	}
+	mincost[0] = 0;
+	int res = 0;
+	
+	while(true){
+		int v = -1;
+		for(int u = 0; u < n; i++){
+			if(!used[u] && (v == -1 || mincost[u] < mincost[v]))
+				v = u;
+		}
+		if(v == -1)break;
+		used[v] = true;
+		res += mincost[v];
+		for(int u = 0; u < n; u++){
+			mincost[u] = min(mincost[u], cost[v][u]);
+		}
+	}
+	return res;
+}
+
+
+
+Kruskal
+按照边的权值顺序从小到大查看一遍，如果不产生圈（包括重边）就把当前边加入到生成树中。
+复杂度O(elogv)
+要用到并查集中的函数
+
+struct edge{
+	int u,v,cost;
+};
+
+bool cmp(edge a,edge b)
+{
+	return a.cost < b.cost;
+}
+
+edge es[max_e];
+int v,n;
+
+int kruskal()
+{
+	sort(es,es + n, cmp);
+	init(v);
+	int res = 0;
+	for(int i = 0; i < n; i++){
+		edge e = es[i];
+		if(!same(e.u,e.v)){
+			unite(e.u,e.v);
+			res += e.cost;
+		}
+	}
+	return res;
+}
