@@ -1,0 +1,98 @@
+1.01背包
+
+for i = 1...N
+	for v = V...0
+		f[v] = max(f[v],f[v-c[i]] + w[i]);
+		
+		
+		
+		
+初始化问题：恰好装满背包，则f[0] = 0， f[1...v] = -∞
+			只是希望价格最大，f[0...v] = 0
+			
+			
+			
+2.完全背包
+
+for i = 1...N
+	for v = cost...V
+		f[v] = max(f[v],f[v-cost] + weight);
+		
+
+
+
+3.多重背包
+
+用二进制思想转化为01背包问题
+procedure MultiplePack(cost,weight,amount)
+	if cost*amount>=V
+	{
+        CompletePack(cost,weight)
+        Return
+	}
+    integer k=1
+	while k<amount
+	{
+        ZeroOnePack(k*cost,k*weight)
+        amount=amount-k
+        k=k*2
+	}
+    ZeroOnePack(amount*cost,amount*weight)
+			
+
+4.01背包和完全背包混合
+
+for i=1..N
+    if 第i件物品是01背包
+        for v=V..0
+            f[v]=max{f[v],f[v-c[i]]+w[i]};
+    else if 第i件物品是完全背包
+        for v=0..V
+            f[v]=max{f[v],f[v-c[i]]+w[i]};
+
+加上多重背包
+for i=1..N
+    if 第i件物品是01背包
+        ZeroOnePack(c[i],w[i])
+    else if 第i件物品是完全背包
+        CompletePack(c[i],w[i])
+    else if 第i件物品是多重背包
+        MultiplePack(c[i],w[i],n[i])
+
+
+
+5.二维费用背包
+一件物品有两个代价，分别对应一个背包有两个容量
+二维数组 类似01背包 逆序循环
+		类似完全背包 顺序循环
+隐含的二维背包
+限制总件数 相当于每件物品多了一个件数的代价
+
+
+
+6.分组背包
+物品被分为若干组，每组中物品只能选一件
+f[k][v]表示前k组物品花费费用v能取得的最大权值
+for 所有的组k
+    for v=V..0
+        for 所有的i属于组k
+            f[v]=max{f[v],f[v-c[i]]+w[i]}
+优化：对于一个物品组中的物品，所有费用相同的物品只留一个价值最大的，不影响结果
+			
+			
+
+7.有依赖的背包
+i依赖j，则选物品i必选物品j
+简化版（附件不会成为其他物品的主件）：
+对主件i的“附件集合”先进行一次01背包，得到费用依次为0..V-c[i]所有这些值时相应的最大价值f'[0..V-c[i]]。
+那么这个主件及它的附件集合相当于V-c[i]+1个物品的物品组，其中费用为c[i]+k的物品的价值为f'[k]+w[i]。
+一般情况（依赖关系以森林给出）：
+一种树形DP，其特点是每个父节点都需要对它的各个儿子的属性进行一次DP以求得自己的相关属性。这已经触及到了“泛化物品”的思想。
+每一个子树都等价于一件泛化物品，求某节点为根的子树对应的泛化物品相当于求其所有儿子的对应的泛化物品之和。
+
+
+
+8.泛化物品
+它并没有固定的费用和价值，而是它的价值随着你分配给它的费用而变化。
+h、l都是泛化物品，若泛化物品f满足f(v)=max{h(k)+l(v-k)|0<=k<=v}，则称f是h与l的和，即f=h+l。
+这个运算的时间复杂度取决于背包的容量，是O(V^2)。
