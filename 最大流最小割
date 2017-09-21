@@ -1,0 +1,126 @@
+最大流的性质：1.容量限制2.斜对称性（f(u,v) = -f(v, u))3.流量平衡
+
+增广路算法
+适用于有向边 起点终点已知
+struct Edge{
+    int from, to, cap, flow;
+    Edge(int u, int v, int c, int f){
+        from = u;
+        to = v;
+        cap = c;
+        flow = f;
+    }
+};
+int n, m,k;
+vector<Edge> edges;
+vector<int> G[maxn];//G[i][j]表示结点i的第j条边在e数组的序号
+int a[maxn];//起点到i的可改进量
+int p[maxn];//最短路树上p的入弧编号
+
+void init(int n)
+{
+    for(int i = 0; i < n;i++){
+        G[i].clear();
+    }
+    edges.clear();
+}
+
+void AddEdge(int from, int to, int cap)
+{
+    edges.push_back(Edge(from, to, cap, 0));
+    edges.push_back(Edge(to, from, 0, 0));//反向弧
+    m = edges.size();
+    G[from].push_back(m - 2);
+    G[to].push_back(m - 1);
+}
+
+int MaxFlow(int s, int t)
+{
+    int flow = 0;
+    while(1){
+        memset(a, 0,sizeof(a));
+        queue<int> Q;
+        Q.push(s);
+        a[s] = inf;
+        while(!Q.empty()){
+            int x = Q.front();
+            Q.pop();
+            for(int i = 0; i < G[x].size(); i++){
+                Edge& e = edges[G[x][i]];
+                if(!a[e.to] && e.cap > e.flow){
+                    p[e.to] = G[x][i];
+                    a[e.to] = min(a[x], e.cap - e.flow);
+                    Q.push(e.to);
+                }
+            }
+            if(a[t]) break;
+        }
+        if(!a[t]) break;
+        for(int u = t; u != s; u = edges[p[u]].from){
+            edges[p[u]].flow += a[t];
+            edges[p[u] ^ 1].flow -= a[t];
+        }
+        flow += a[t];
+    }
+    return flow;
+}
+
+
+
+最大流最小割定理
+最小割的容量定义为所有起点在S终点在T中的所有边的容量和
+从s到t的净流量等于f = ∑f（u，v） <= ∑ c（u，v） = c（s，t）
+当残量网络中没有增广路时，残量网络中s和t并不连通 则此时把已标号的结点集合看成S 令T = V - S
+此时原图中跨越S和T的所有弧均满载（这样的边才不会在残量网络中） 所以最大流=最小割
+
+stoer_wagner算法
+无向图
+①：如果s∈M，t∈N则Min-C（s，t）= Cut（这就是最终的最小割了）
+②：如果s，t∈M（或者s，t∈N）则Min-C（s，t）<= Cut
+（那么合并s和t后并不影响最小割，所以就把st合并了得到中间结果图G'，继续在图G'上求最小割直到命中条件①）
+②中提到的合并操作，定义为Contract(a,b) := 删掉点 a, b 及边(a, b)
+加入新节点 c，对于任意 v ∈ 与ab联通的点集，做一条新的边w(v, c) = w(c, v) = w(a, v) + w(b, v)
+算法步骤如下:
+1. 设最小割cut=INF, 任选一个点s到集合A中, 定义W(A, p)为A中的所有点到A外一点p的权总和.
+2. 对刚才选定的s, 更新W(A,p)(该值递增).
+3. 选出A外一点p, 且W(A,p)最大的作为新的s, 若A!=G(V), 则继续2.
+4. 把最后进入A的两点记为s和t, 用W(A,t)更新cut.
+5. 合并st，即新建顶点u, 边权w(u, v)=w(s, v)+w(t, v), 删除顶点s和t, 以及与它们相连的边.
+6. 若|V|!=1则继续1.
+int stoer_wagner(int n)
+{
+    int min_cut = inf;
+    for(int i = 0; i < n; i++){
+        v[i] = i;//初始化
+    }
+
+    //最后剩两个点
+    while(n > 1){
+        int pre = 0;//pre用来表示之前加入A集合的点（在t之前一个加进去的点）
+        memset(vis, 0,sizeof(vis));
+        memset(w, 0,sizeof(w));
+        for(int i = 1; i < n; i++){
+            int k = -1;
+            for(int j = 1; j < n; j++){//选取V-A中的w(A,x)最大的点x加入集合
+                if(!vis[v[j]]){
+                    w[v[j]] += G[v[pre]][v[j]];
+                    if(k == -1 || w[v[k]] < w[v[j]])
+                        k = j;
+                }
+            }
+            vis[v[k]] = true;
+            if(i == n - 1){//若|A|=|V|（所有点都加入了A），结束
+                const int s = v[pre], t = v[k];
+                min_cut = min(min_cut, w[t]);
+                for(int j = 0; j < n; j++){
+                    G[s][v[j]] += G[v[j]][t];
+                    G[v[j]][s] += G[v[j]][t];
+                }
+                v[k] = v[--n];
+            }
+            pre = k;
+        }
+    }
+    return min_cut;
+}
+
