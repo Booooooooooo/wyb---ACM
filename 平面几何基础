@@ -1,0 +1,145 @@
+一个很有信息量的博客：http://m.9512.net/read/9aad4ffc1faf6b373adb5184.html
+
+向量p1=（x1, y1）， p2 = （x2, y2），内积p1·p2 = x1x2 + y1y2, 外积p1 * p2 = x1y2 - x2y1
+
+判断点q是否在线段p1-p2上
+先利用外积根据是否有（p1-q）*（p2-q）= 0来判断点q是否在直线p1-p2上
+再利用内积根据是否有（p1-q）*（p2-q）《= 0来判断点q是否落在p1-p2之间
+要求两直线的交点，通过变量t将直线p1-p2上的点表示为p1+t(p2-p1)，交点又在直线q1-q2上，所以有：
+(q2-q1)*(p1 + t(p2 - p1) - q1) = 0
+求得t = p1 + (q2 - q1) * (q1 - p1) / ((q2 - q1) * (p2 - p1))  (p2 - p1
+【注】平行的直线没有交点， 但平行的线段可能有公共点
+
+[cpp] view plain copy
+double EPS = 1e-10;  
+  
+//考虑误差的加法运算  
+double add(double a, double b)  
+{  
+    if(abs(a + b) < EPS * (abs(a) + abs(b))) return 0;  
+    return a + b;  
+}  
+  
+//二维向量结构体  
+struct P{  
+    double x, y;  
+    P() {}  
+    P(double x, double y): x(x), y(y){  
+    }  
+    P operator + (P p){  
+        return P(add(x, p.x) ,add(y, p.y));  
+    }  
+    P operator - (P p){  
+        return P(add(x, -p.x), add(y, -p.y));  
+    }  
+    P operator * (double d){  
+        return P(x * d, y * d);  
+    }  
+    double dot(P p){//内积  
+        return add(x * p.x, y * p.y);  
+    }  
+    double det(P p){//外积  
+        return add(x * p.y, -y * p.x);  
+    }  
+};  
+  
+//判断q是否在线段p1-p2上  
+bool on_seg(P p1, P p2, P q)  
+{  
+    return (p1 - q).det(p2 - q) == 0 && (p1 - q).dot(p2 - q) <= 0;  
+}  
+  
+//计算直线p1-p2与直线q1-q2的交点  
+P intersection(P p1, P p2, P q1, P q2)  
+{  
+    return p1 + (p2 - p1) * ((q2 - q1).det(q1 - p1) / (q2 - q1).det(p2 - p1));  
+}  
+
+
+误差处理规则
+选取合适的足够小的常数EPS 
+a < 0 --> a < -EPS
+a <= 0 --> a < EPS
+a == 0 --> abs(a) < EPS
+
+平面扫描
+扫描线在平面上按给定轨迹移动的同时，不断根据扫描线扫过部分更新信息，从而得到整体所要求的结果
+
+凸包
+包围原点集的最小凸多边形的顶点组成的集合，称为原点集的凸包。不在任意三个点组成的三角形内部，所给点集最外围的点。
+求凸包 基于平面扫描法的Graham扫描算法
+把点集按x坐标-->y坐标的字典序升序排序排序后的第一个和最后一个点必然是凸包上的顶点，他们之间的部分可以分成上下两条链分别求解。
+求下侧的链时只要从小到大处理排序后的点列，逐步构造凸包
+在构造过程中的凸包末尾加上新的顶点后，可能会破坏凸性，此时只要将凹的部分的点从末尾除去就好了。
+排序O（nlogn） 剩余部分处理O（n）
+[cpp] view plain copy
+//字典序比较  
+bool cmp_x(const P &p, const P &q)  
+{  
+    if(p.x != q.x) return q.x < q.x;  
+    return p.y < q.y;  
+}  
+  
+//求凸包  
+vector <P> convex_hull (P *ps, int n)  
+{  
+    sort(ps, ps + n, cmp_x);  
+    int k = 0;//凸包顶点数  
+    vector <P> qs(n * 2)//构造中的凸包  
+    //构造凸包的下侧  
+    for(int i = 0; i < n; i++){  
+        while(k > 1 && (qs[k - 1] - qs[k - 2]).det(ps[i] - qs[k - 1]) <= 0) k--;//外积小于0 说明角度在180-360 是凹的  
+        qs[k++] = ps[i];  
+    }  
+    //构造凸包的上侧  
+    for(int i = n - 2, t = k; i >= 0; i--){  
+        while(k > t && (qs[k - 1] - qs[k - 2]).det(ps[i] - qs[k - 1]) <= 0) k--;  
+        qs[k++] = ps[i];  
+    }  
+    qs.resize(k - 1);  
+    return qs;  
+}  
+resize(n) 
+调整容器的长度大小，使其能容纳n个元素。
+如果n小于容器的当前的size，则删除多出来的元素。
+否则，添加采用值初始化的元素。
+
+旋转卡壳法求最远点
+假设最远点对是p和q， p就是点集中（p-q）方向最远的点，q是点集中（q-p）方向最远的点。
+按逆时针逐渐改变方向，同时列举出所有对于某个方向上最远的点对，称为对踵点对，那么最远点对一定也包含其中。
+在逐渐改变方向的过程中，对踵点对只有在方向等于凸包某条边的法线方向时发生变化，此时点将向凸包上对应的相邻点移动。
+令方向逆时针旋转一周，那么对踵点对在凸包上也旋转了一周，这样就可以在凸包顶点数的线性时间内求得最远点对。
+[cpp] view plain copy
+//距离的平方  
+double dists(P p, P q)  
+{  
+    return (p - q).dot(p - q);  
+}  
+  
+void solve()  
+{  
+    vector <P> qs = convex_hull(ps, N);  
+    int n = qs.size();  
+    if(n == 2){  
+        printf.........//特别处理凸包退化的情况  
+        return ;  
+    }  
+    int i = 0, j = 0;//某个方向上的对踵点对  
+    //求出x轴方向上的对踵点对  
+    for(int k = 0; k < n; k++){  
+        if(!cmp_x(qs[i], qs[k])) i = k;  
+        if(cmp_x(qs[j], qs[k])) j = k;  
+    }  
+    double res = 0;  
+    int si = i, sj = j;  
+    while(i != sj || j != si){//将方向逐步旋转180度  
+        res = max(res, dist(qs[i], qs[j]));  
+        //判断先转到边i- （i+ 1）的法线方向还是边j-（j+1）的法线方向  
+        if((qs[(i + 1) % n] - qs[i]).det(qs[(j + 1) % n] - qs[j]) < 0){  
+            i = (i + 1) % n;//先转到边i- （i+ 1）的法线方向  
+        }  
+        else{  
+            j = (j + 1) % n;//先转到边j-（j+1）的法线方向  
+        }  
+    }  
+}  
