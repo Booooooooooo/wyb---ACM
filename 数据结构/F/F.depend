@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1493269066 source:e:\code\acm\数据结构\f\main.cpp
+	<iostream>
+	<stdio.h>
+	<algorithm>
+

@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1494399641 source:e:\code\acm\zju\main.cpp
+	<iostream>
+	<algorithm>
+	<stdio.h>
+	<cstring>
+	<string>
+
